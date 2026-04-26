@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeeye-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codeeye-backend
+  template:
+    metadata:
+      labels:
+        app: codeeye-backend
+    spec:
+      containers:
+        - name: backend
+          image: codeeye/backend:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: codeeye-config
