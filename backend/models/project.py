@@ -5,7 +5,7 @@ from datetime import datetime
 @dataclass
 class Project:
     id: str
-    user_id: str
+    device_id: str
     name: str
     provider_type: str
     provider_id: str

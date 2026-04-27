@@ -98,9 +98,9 @@ No other tool does this. This is the core differentiator.
 | Frontend | React + Tailwind CSS (Vite) |
 | AI reasoning | Groq API + LangChain (LLaMA model) |
 | Voice transcription | OpenAI Whisper API (free tier) |
-| Database | PostgreSQL |
+| Database | MySQL |
 | Background jobs | APScheduler |
-| Auth | JWT (access + refresh tokens) |
+| Access model | Device-issued credentials + read-only cloud sessions |
 | Git providers | GitHub REST API, GitLab REST API |
 | Containerization | Docker + Docker Compose |
 | Orchestration | Kubernetes (manifests in `/k8s` folder) |
@@ -116,19 +116,20 @@ CodeEye/
 ├── backend/
 │   ├── main.py                  # FastAPI app entry point
 │   ├── config.py                # Env vars, settings
-│   ├── database.py              # PostgreSQL connection, SQLAlchemy
+│   ├── database.py              # MySQL connection, SQLAlchemy
 │   ├── models/
 │   │   ├── project.py           # Project model
 │   │   ├── activity_log.py      # Activity log model
 │   │   ├── health_check.py      # Health check result model
-│   │   └── user.py              # User model
+│   │   ├── device.py            # Device credential model
+│   │   └── cloud_session.py     # Read-only cloud session model
 │   ├── providers/
 │   │   ├── base.py              # ActivityProvider abstract base class
 │   │   ├── github.py            # GitHub provider implementation
 │   │   ├── gitlab.py            # GitLab provider implementation
 │   │   └── url_checker.py       # URL health check provider
 │   ├── routers/
-│   │   ├── auth.py              # JWT auth endpoints
+│   │   ├── access.py            # Device registration + cloud session endpoints
 │   │   ├── projects.py          # Project CRUD endpoints
 │   │   ├── providers.py         # Connect/disconnect provider endpoints
 │   │   ├── ai.py                # AI focus plan, priority, voice dump endpoints
@@ -171,18 +172,28 @@ CodeEye/
 
 ## Database schema
 
-### users
+### devices
 ```sql
 id UUID PRIMARY KEY
-email VARCHAR UNIQUE NOT NULL
-password_hash VARCHAR NOT NULL
+device_name VARCHAR NOT NULL
+device_secret_hash VARCHAR NOT NULL
+cloud_readonly BOOLEAN DEFAULT TRUE
+created_at TIMESTAMP DEFAULT NOW()
+```
+
+### cloud_sessions
+```sql
+id UUID PRIMARY KEY
+device_id UUID REFERENCES devices(id)
+access_token_hash VARCHAR NOT NULL
+expires_at TIMESTAMP NOT NULL
 created_at TIMESTAMP DEFAULT NOW()
 ```
 
 ### projects
 ```sql
 id UUID PRIMARY KEY
-user_id UUID REFERENCES users(id)
+device_id UUID REFERENCES devices(id)
 name VARCHAR NOT NULL
 provider_type VARCHAR NOT NULL  -- 'github', 'gitlab', 'url'
 provider_id VARCHAR              -- repo full_name or URL
@@ -198,7 +209,7 @@ project_id UUID REFERENCES projects(id)
 event_type VARCHAR NOT NULL      -- 'commit', 'issue_opened', 'pr_merged', etc.
 description TEXT
 happened_at TIMESTAMP NOT NULL
-raw_data JSONB                   -- full provider response stored for debugging
+raw_data JSON                    -- full provider response stored for debugging
 ```
 
 ### health_checks
@@ -215,7 +226,7 @@ error_message TEXT
 ### provider_connections
 ```sql
 id UUID PRIMARY KEY
-user_id UUID REFERENCES users(id)
+device_id UUID REFERENCES devices(id)
 provider_type VARCHAR NOT NULL      -- 'github', 'gitlab'
 account_identifier VARCHAR NOT NULL -- github login or gitlab username/id
 access_token_encrypted TEXT NOT NULL
@@ -230,19 +241,19 @@ UNIQUE(user_id, provider_type, account_identifier)
 ### voice_notes
 ```sql
 id UUID PRIMARY KEY
-user_id UUID REFERENCES users(id)
+device_id UUID REFERENCES devices(id)
 project_id UUID REFERENCES projects(id)
 audio_file_url TEXT
 transcript TEXT NOT NULL
-extracted_tasks JSONB DEFAULT '[]'::jsonb
-extracted_blockers JSONB DEFAULT '[]'::jsonb
+extracted_tasks JSON
+extracted_blockers JSON
 created_at TIMESTAMP DEFAULT NOW()
 ```
 
 ### ai_runs
 ```sql
 id UUID PRIMARY KEY
-user_id UUID REFERENCES users(id)
+device_id UUID REFERENCES devices(id)
 request_type VARCHAR NOT NULL       -- 'priority', 'focus', 'stale_nudge', 'voice_extract'
 model_name VARCHAR NOT NULL
 latency_ms INTEGER
@@ -352,13 +363,23 @@ Return JSON:
 
 ---
 
+## Access pattern — desktop + cloud read portal
+
+1. Desktop app starts and requests a new `device_id` + `device_secret` from backend.
+2. Desktop app stores the secret locally and sends data to cloud using this pair.
+3. User opens deployed cloud portal and logs in with `device_id` + `device_secret`.
+4. Cloud portal issues read-only session token and only allows read endpoints.
+5. All write operations remain desktop-side or trusted backend workflows.
+
+---
+
 ## Key implementation rules
 
 1. **Never call provider APIs from routers.** Routers call services. Services call providers.
-2. **All provider responses go through `normalizer.py` before hitting the DB.** Raw data is stored in `raw_data JSONB` for debugging but never used in AI prompts directly.
+2. **All provider responses go through `normalizer.py` before hitting the DB.** Raw data is stored in `raw_data JSON` for debugging but never used in AI prompts directly.
 3. **AI prompts always receive normalized data, never raw API responses.** Keep prompt context clean and consistent regardless of provider.
 4. **Health check scheduler runs independently from user requests.** It should not block or be blocked by API traffic.
-5. **JWT access tokens expire in 15 minutes. Refresh tokens in 7 days.** Implement token refresh silently in the Axios interceptor on the frontend.
+5. **No email/password auth in MVP.** Use device-issued credentials and short-lived read-only cloud sessions.
 6. **One page, three panels. No routing.** React state manages which project is selected. No React Router needed.
 7. **Voice recording uses browser MediaRecorder API.** Do not use any third-party recording library.
 8. **All Groq calls are async.** Never block the FastAPI event loop with synchronous LLM calls.
@@ -369,7 +390,7 @@ Return JSON:
 13. **Add per-provider rate-limit handling.** Respect reset windows and degrade gracefully when quota is hit.
 14. **Voice transcripts and raw provider payloads have retention windows.** Default retention: 90 days for raw payloads, 180 days for transcripts.
 15. **Health score must be deterministic.** Base formula combines recency, issue pressure, and deployment health and is recalculated after each sync.
-16. **OAuth callback handling must stay single-page compatible.** Use a dedicated callback state handler in-app (single route handoff is allowed only for callback parsing).
+16. **Cloud portal is read-only.** Any endpoint that mutates provider or project data must require trusted desktop context.
 17. **Define environment targets explicitly.** Local dev (Docker Compose), staging (Railway/Vercel), optional self-hosted (Kubernetes manifests).
 
 ---
@@ -378,11 +399,11 @@ Return JSON:
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/CodeEye
+DATABASE_URL=mysql+pymysql://codeeye:password@localhost:3306/codeeye
 
-# Auth
-JWT_SECRET_KEY=your-secret-key-here
-JWT_ALGORITHM=HS256
+# Device access
+DEVICE_ACCESS_SECRET=your-device-access-secret
+CLOUD_SESSION_HOURS=24
 
 # AI
 GROQ_API_KEY=your-groq-api-key
@@ -444,12 +465,12 @@ The score is 0-100 and recalculated on sync and each health check event.
 ## What to build — week by week
 
 ### Week 1 — Foundation
-- Day 1: FastAPI setup, PostgreSQL, Docker Compose, Git repo live
+- Day 1: FastAPI setup, MySQL, Docker Compose, Git repo live
 - Day 2: `ActivityProvider` abstract base class — this is the backbone
 - Day 3: GitHub provider implementation + OAuth
 - Day 4: GitLab provider implementation + OAuth
 - Day 5: URL health check provider + APScheduler pinging
-- Day 6: Core REST APIs (auth, projects, providers) + PyTest
+- Day 6: Core REST APIs (device access, projects, providers) + PyTest
 - Day 7: End-to-end test all three providers
 
 ### Week 2 — AI brain

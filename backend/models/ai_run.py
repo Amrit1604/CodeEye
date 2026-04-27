@@ -5,7 +5,7 @@ from datetime import datetime
 @dataclass
 class AIRun:
     id: str
-    user_id: str
+    device_id: str
     request_type: str
     model_name: str
     latency_ms: int | None

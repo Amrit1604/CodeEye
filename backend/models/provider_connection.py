@@ -5,7 +5,7 @@ from datetime import datetime
 @dataclass
 class ProviderConnection:
     id: str
-    user_id: str
+    device_id: str
     provider_type: str
     account_identifier: str
     access_token_encrypted: str

@@ -5,7 +5,7 @@ from datetime import datetime
 @dataclass
 class VoiceNote:
     id: str
-    user_id: str
+    device_id: str
     project_id: str | None
     audio_file_url: str | None
     transcript: str
