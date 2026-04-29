@@ -1,21 +1,19 @@
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
-const activityLabels = {
-  alert: "!",
-  commit: "<>",
-  issue: "#",
-};
+export default function ActivityFeed({ loading, projects, selectedProject }) {
+  const recentProjects = [...projects]
+    .sort((a, b) => b.health - a.health)
+    .slice(0, 5);
 
-export default function ActivityFeed({ loading, activities, selectedProject }) {
   return (
     <section className="panel activity-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Normalized events</p>
-          <h2>Activity Feed</h2>
+          <p className="eyebrow">Backend data</p>
+          <h2>Repository Signals</h2>
         </div>
-        <span className="status-chip">{selectedProject.name}</span>
+        <span className="status-chip">{selectedProject?.name ?? "No project"}</span>
       </div>
 
       {loading ? (
@@ -26,17 +24,25 @@ export default function ActivityFeed({ loading, activities, selectedProject }) {
           highlightColor="rgba(255,255,255,0.11)"
           borderRadius={8}
         />
+      ) : recentProjects.length === 0 ? (
+        <div className="empty-state">
+          <strong>No repository signals yet</strong>
+          <p>After GitHub connects, repo recency and issue pressure appear here.</p>
+        </div>
       ) : (
         <div className="activity-list">
-          {activities.map((activity) => (
-            <article className={`activity-item type-${activity.type}`} key={activity.id}>
-              <span className="activity-icon">{activityLabels[activity.type] ?? "*"}</span>
+          {recentProjects.map((project) => (
+            <article className="activity-item" key={project.id}>
+              <span className="activity-icon">{project.health}</span>
               <div>
                 <div className="activity-meta">
-                  <strong>{activity.project}</strong>
-                  <span>{activity.time}</span>
+                  <strong>{project.name}</strong>
+                  <span>{project.lastCommit}</span>
                 </div>
-                <p>{activity.message}</p>
+                <p>
+                  {project.openIssues} open issues. Health score is calculated from
+                  GitHub activity and issue pressure.
+                </p>
               </div>
             </article>
           ))}

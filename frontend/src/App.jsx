@@ -4,17 +4,20 @@ import ActivityFeed from "./components/ActivityFeed";
 import ProjectList from "./components/ProjectList";
 import ProviderSetup from "./components/ProviderSetup";
 import VoiceDump from "./components/VoiceDump";
-import { activityFeed, focusPlan, projects } from "./data/mock";
+import useAI from "./hooks/useAI";
+import useProjects from "./hooks/useProjects";
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[1].id);
+  const { items: projects, loading, error, connected } = useProjects();
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [hours, setHours] = useState(2);
+  const { data: aiData } = useAI(hours);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 650);
-    return () => window.clearTimeout(timer);
-  }, []);
+    if (!selectedProjectId && projects.length > 0) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [projects, selectedProjectId]);
 
   const selectedProject =
     projects.find((project) => project.id === selectedProjectId) ?? projects[0];
@@ -26,27 +29,28 @@ export default function App() {
           <p className="eyebrow">AI dev operations brain</p>
           <h1>CodeEye</h1>
         </div>
-        <ProviderSetup />
+        <ProviderSetup connected={connected} />
       </header>
 
       <main className="dashboard-grid">
         <ProjectList
+          error={error}
           loading={loading}
           projects={projects}
-          selectedProjectId={selectedProjectId}
+          selectedProjectId={selectedProject?.id ?? ""}
           onSelectProject={setSelectedProjectId}
         />
         <div className="center-column">
           <ActivityFeed
             loading={loading}
-            activities={activityFeed}
+            projects={projects}
             selectedProject={selectedProject}
           />
           <VoiceDump />
         </div>
         <AIPanel
+          aiData={aiData}
           loading={loading}
-          focusPlan={focusPlan}
           projects={projects}
           hours={hours}
           setHours={setHours}

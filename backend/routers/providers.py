@@ -1,9 +1,10 @@
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import RedirectResponse
 from urllib.parse import urlencode
 
 from config import settings
+from providers.github import GitHubProvider
 
 router = APIRouter()
 
@@ -66,3 +67,32 @@ async def github_callback(code: str):
             
         # Redirect to frontend with token
         return RedirectResponse(f"{settings.frontend_url}/?provider=github&token={access_token}")
+
+
+@router.get("/github/projects")
+async def github_projects(authorization: str | None = Header(default=None)) -> dict:
+    """Return GitHub repositories for the connected OAuth token."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Missing GitHub bearer token")
+
+    token = authorization.split(" ", 1)[1].strip()
+    provider = GitHubProvider()
+    projects = await provider.get_projects({"access_token": token})
+
+    return {
+        "items": [
+            {
+                "id": project.provider_id,
+                "provider_id": project.provider_id,
+                "provider_type": "github",
+                "provider": "github",
+                "name": project.name,
+                "url": project.url,
+                "last_activity_at": project.last_activity_at.isoformat()
+                if project.last_activity_at
+                else None,
+                "open_issues_count": project.open_issues_count,
+            }
+            for project in projects
+        ]
+    }

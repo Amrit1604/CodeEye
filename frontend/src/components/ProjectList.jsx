@@ -5,6 +5,7 @@ import ProviderBadge from "./ui/ProviderBadge";
 import StatusDot from "./ui/StatusDot";
 
 export default function ProjectList({
+  error,
   loading,
   projects,
   selectedProjectId,
@@ -29,6 +30,16 @@ export default function ProjectList({
             highlightColor="rgba(255,255,255,0.11)"
             borderRadius={8}
           />
+        </div>
+      ) : error ? (
+        <div className="empty-state">
+          <strong>Could not load projects</strong>
+          <p>{error}</p>
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="empty-state">
+          <strong>No connected projects yet</strong>
+          <p>Connect GitHub to load your real repositories here.</p>
         </div>
       ) : (
         <div className="project-list">

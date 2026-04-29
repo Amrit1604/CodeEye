@@ -1,21 +1,18 @@
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { fullAiText } from "../data/mock";
 
-const urgencyClass = {
-  critical: "critical",
-  high: "high",
-  low: "low",
-};
-
-export default function AIPanel({ loading, focusPlan, projects, hours, setHours }) {
-  const criticalCount = projects.filter((project) => project.health < 50).length;
+export default function AIPanel({ aiData, loading, projects, hours, setHours }) {
+  const weakest = [...projects].sort((a, b) => a.health - b.health).slice(0, 3);
+  const focusText =
+    aiData?.focus_plan ??
+    "Connect GitHub first. CodeEye will rank your repositories once real activity is available.";
+  const alerts = aiData?.critical_alerts ?? [];
 
   return (
     <section className="panel ai-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Groq reasoning</p>
+          <p className="eyebrow">AI reasoning</p>
           <h2>Daily Focus</h2>
         </div>
         <label className="hours-control">
@@ -51,40 +48,48 @@ export default function AIPanel({ loading, focusPlan, projects, hours, setHours 
         <>
           <div className="ai-summary">
             <div>
-              <span className="alert-number">{criticalCount}</span>
-              <p>critical project</p>
+              <span className="alert-number">{weakest.length}</span>
+              <p>tracked repos</p>
             </div>
-            <p>{fullAiText}</p>
+            <p>{focusText}</p>
           </div>
 
-          <div className="focus-list">
-            {focusPlan.map((item) => (
-              <article className="focus-item" key={item.rank}>
-                <span className={`rank-dot ${urgencyClass[item.urgency]}`}>
-                  {item.rank}
-                </span>
-                <div>
-                  <div className="focus-meta">
-                    <strong>{item.project}</strong>
-                    <span>{item.minutes ? `${item.minutes} min` : "skip"}</span>
+          {weakest.length === 0 ? (
+            <div className="empty-state">
+              <strong>No AI priority list yet</strong>
+              <p>Real GitHub repositories are required before CodeEye can rank work.</p>
+            </div>
+          ) : (
+            <div className="focus-list">
+              {weakest.map((project, index) => (
+                <article className="focus-item" key={project.id}>
+                  <span className={`rank-dot ${project.health < 50 ? "critical" : "high"}`}>
+                    {index + 1}
+                  </span>
+                  <div>
+                    <div className="focus-meta">
+                      <strong>{project.name}</strong>
+                      <span>{project.health}/100</span>
+                    </div>
+                    <p>
+                      Review this repository first. It has {project.openIssues} open
+                      issues and last activity was {project.lastCommit}.
+                    </p>
                   </div>
-                  <p>{item.action}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
 
-          <div className="health-bars">
-            {projects.map((project) => (
-              <div className="health-row" key={project.id}>
-                <span>{project.name}</span>
-                <div>
-                  <i style={{ width: `${project.health}%` }} />
-                </div>
-                <strong>{project.health}</strong>
-              </div>
-            ))}
-          </div>
+          {alerts.length > 0 && (
+            <div className="alert-list">
+              {alerts.map((alert) => (
+                <p className="alert-row" key={alert}>
+                  {alert}
+                </p>
+              ))}
+            </div>
+          )}
         </>
       )}
     </section>

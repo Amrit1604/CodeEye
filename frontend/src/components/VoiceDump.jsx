@@ -2,9 +2,7 @@ import { useState } from "react";
 import VoiceButton from "./ui/VoiceButton";
 
 export default function VoiceDump() {
-  const [lastNote, setLastNote] = useState(
-    "Mentioned a possible CORS issue on InsureInfo two days ago."
-  );
+  const [lastNote, setLastNote] = useState("");
 
   const handleRecord = () => {
     setLastNote("Voice note saved. AI extraction will attach tasks and blockers here.");
@@ -19,7 +17,14 @@ export default function VoiceDump() {
         </div>
         <VoiceButton onRecord={handleRecord} />
       </div>
-      <p>{lastNote}</p>
+      {lastNote ? (
+        <p>{lastNote}</p>
+      ) : (
+        <div className="empty-state">
+          <strong>No voice notes yet</strong>
+          <p>Record a note to attach real blockers and tasks to your projects.</p>
+        </div>
+      )}
     </section>
   );
 }
