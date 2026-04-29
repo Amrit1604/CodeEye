@@ -1,7 +1,11 @@
 export default function ProviderSetup() {
+  const handleConnect = () => {
+    window.location.href = "http://localhost:8000/providers/github/login";
+  };
+
   return (
-    <button className="rounded-lg border bg-white px-3 py-2 text-sm font-medium shadow-sm">
-      Connect Provider
+    <button className="connect-button" onClick={handleConnect} type="button">
+      Connect GitHub
     </button>
   );
 }

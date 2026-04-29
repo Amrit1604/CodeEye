@@ -1,10 +1,25 @@
+import { useState } from "react";
+import VoiceButton from "./ui/VoiceButton";
+
 export default function VoiceDump() {
+  const [lastNote, setLastNote] = useState(
+    "Mentioned a possible CORS issue on InsureInfo two days ago."
+  );
+
+  const handleRecord = () => {
+    setLastNote("Voice note saved. AI extraction will attach tasks and blockers here.");
+  };
+
   return (
-    <section className="rounded-2xl border bg-white/70 p-4 shadow-sm backdrop-blur">
-      <h2 className="mb-3 text-lg font-semibold">Voice Dump</h2>
-      <button className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">
-        Hold to Record
-      </button>
+    <section className="panel voice-panel">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Hands-free capture</p>
+          <h2>Voice Dump</h2>
+        </div>
+        <VoiceButton onRecord={handleRecord} />
+      </div>
+      <p>{lastNote}</p>
     </section>
   );
 }

@@ -3,11 +3,404 @@
 @tailwind utilities;
 
 :root {
-  color: #101010;
-  background: radial-gradient(circle at 20% 0%, #f5ffe8, #fefaf0 60%);
+  color: #f5f7fb;
+  background: #080b10;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(0, 229, 160, 0.12), transparent 34%),
+    linear-gradient(315deg, rgba(88, 166, 255, 0.12), transparent 32%),
+    #080b10;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.top-bar,
+.panel-heading,
+.project-card-main,
+.project-title-row,
+.activity-meta,
+.focus-meta,
+.health-row {
+  display: flex;
+  align-items: center;
+}
+
+.top-bar {
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.top-bar h1,
+.panel h2,
+.project-card h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.top-bar h1 {
+  font-size: clamp(2rem, 5vw, 4.4rem);
+  line-height: 0.9;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: rgba(245, 247, 251, 0.48);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.connect-button,
+.voice-button {
+  min-height: 38px;
+  border: 1px solid rgba(0, 229, 160, 0.3);
+  border-radius: 8px;
+  background: rgba(0, 229, 160, 0.09);
+  color: #00e5a0;
+  cursor: pointer;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.connect-button {
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.35fr) minmax(300px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.center-column {
+  display: grid;
+  gap: 16px;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(10, 15, 22, 0.82);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+  padding: 18px;
+  backdrop-filter: blur(18px);
+}
+
+.panel-heading {
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  color: #f5f7fb;
+  font-size: 1rem;
+}
+
+.count-pill,
+.status-chip {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(245, 247, 251, 0.72);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  padding: 5px 9px;
+}
+
+.stack,
+.project-list,
+.activity-list,
+.focus-list,
+.health-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.project-card {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: inherit;
+  cursor: pointer;
+  padding: 12px;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.project-card:hover,
+.project-card.is-selected {
+  border-color: rgba(0, 229, 160, 0.45);
+  background: rgba(0, 229, 160, 0.075);
+  transform: translateY(-1px);
+}
+
+.project-card-main {
+  gap: 12px;
+}
+
+.project-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.project-title-row {
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.project-card h3 {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.98rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-card p,
+.activity-item p,
+.focus-item p,
+.voice-panel p,
+.ai-summary p {
+  margin: 0;
+  color: rgba(245, 247, 251, 0.58);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.project-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.project-metrics span {
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(245, 247, 251, 0.54);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.66rem;
+  padding: 5px 6px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-item,
+.focus-item,
+.ai-summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 12px;
+}
+
+.activity-icon,
+.rank-dot {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(88, 166, 255, 0.12);
+  color: #58a6ff;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.type-alert .activity-icon,
+.rank-dot.critical {
+  background: rgba(255, 71, 87, 0.13);
+  color: #ff4757;
+}
+
+.type-issue .activity-icon,
+.rank-dot.high {
+  background: rgba(245, 166, 35, 0.13);
+  color: #f5a623;
+}
+
+.rank-dot.low {
+  background: rgba(0, 229, 160, 0.12);
+  color: #00e5a0;
+}
+
+.activity-meta,
+.focus-meta {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.activity-meta strong,
+.focus-meta strong {
+  color: #f5f7fb;
+  font-size: 0.84rem;
+}
+
+.activity-meta span,
+.focus-meta span {
+  color: rgba(245, 247, 251, 0.38);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.voice-panel .panel-heading {
+  margin-bottom: 10px;
+}
+
+.voice-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+}
+
+.voice-button span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00e5a0;
+}
+
+.voice-button.is-recording {
+  border-color: rgba(255, 71, 87, 0.55);
+  background: rgba(255, 71, 87, 0.12);
+  color: #ff4757;
+}
+
+.voice-button.is-recording span {
+  background: #ff4757;
+  box-shadow: 0 0 10px #ff4757;
+}
+
+.hours-control {
+  display: grid;
+  width: 116px;
+  gap: 7px;
+}
+
+.hours-control span {
+  color: #00e5a0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.hours-control input {
+  width: 100%;
+  accent-color: #00e5a0;
+}
+
+.ai-summary {
+  grid-template-columns: 72px 1fr;
+  margin-bottom: 12px;
+}
+
+.alert-number {
+  display: block;
+  color: #ff4757;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.health-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 34px;
+  gap: 8px;
+  color: rgba(245, 247, 251, 0.62);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.7rem;
+}
+
+.health-row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.health-row div {
+  overflow: hidden;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.health-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff4757, #f5a623, #00e5a0);
+}
+
+@media (max-width: 1050px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ai-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 18px;
+  }
+
+  .top-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .project-metrics {
+    grid-template-columns: 1fr;
+  }
 }
